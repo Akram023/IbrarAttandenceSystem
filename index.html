@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendPro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0A0A12;--s1:#13131F;--s2:#1C1C2E;--s3:#252538;--br:#2A2A42;--ac:#7B5FFF;--g:#00C896;--r:#FF6B6B;--am:#FFB347;--gr:#6B6B8A;--tx:#F0F0FF;--tx2:#9999BB;--tx3:#5555AA}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;font-size:12px;display:flex}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--br);border-radius:3px}
+
+/* SIDEBAR */
+.sb{width:175px;background:var(--s1);border-right:1px solid var(--br);display:flex;flex-direction:column;flex-shrink:0;height:100vh}
+.logo{padding:12px 14px 8px;border-bottom:1px solid var(--br)}
+.logo h2{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;background:linear-gradient(135deg,var(--ac),var(--g));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo p{font-size:9px;color:var(--tx3);margin-top:1px}
+.nav{padding:8px 6px;flex:1;display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:6px;cursor:pointer;color:var(--tx2);font-size:11px;font-weight:500;transition:all 0.15s}
+.ni:hover{background:var(--s2);color:var(--tx)}
+.ni.active{background:rgba(123,95,255,0.2);color:var(--ac);border:1px solid rgba(123,95,255,0.25)}
+.ni-ic{font-size:13px}
+.sb-foot{padding:8px 10px;border-top:1px solid var(--br)}
+.pb{background:var(--s2);border:1px solid var(--br);border-radius:6px;padding:7px 9px}
+.pb label{display:block;font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:2px}
+.pb strong{font-family:'Syne',sans-serif;font-size:12px;color:var(--tx)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh;min-width:0}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br);background:var(--s1);flex-shrink:0}
+.pt{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;flex:1;white-space:nowrap}
+.pt span{color:var(--ac)}
+.scb{background:var(--s2);border:1px solid var(--br);border-radius:5px;padding:4px 10px;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2);white-space:nowrap}
+.scb strong{font-family:'Syne',sans-serif;font-size:14px;color:var(--ac)}
+select,input[type=text],input[type=number],input[type=date]{background:var(--s2);border:1px solid var(--br);color:var(--tx);padding:4px 7px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none}
+select:focus,input:focus{border-color:var(--ac)}
+.btn{padding:5px 11px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.bp{background:var(--ac);color:#fff}.bp:hover{background:#6A4EEE}
+.bd{background:rgba(255,107,107,0.15);color:var(--r);border:1px solid rgba(255,107,107,0.3)}
+.bg{background:rgba(0,200,150,0.15);color:var(--g);border:1px solid rgba(0,200,150,0.3)}
+.bo{background:transparent;color:var(--tx2);border:1px solid var(--br)}.bo:hover{border-color:var(--ac);color:var(--ac)}
+
+/* CONTENT */
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.page{display:none;flex:1;flex-direction:column;overflow:hidden;min-width:0}.page.active{display:flex}
+
+/* ===== ATTENDANCE ===== */
+.att-page{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* Legend bar */
+.leg-bar{display:flex;align-items:center;gap:14px;padding:6px 16px;background:var(--s1);border-bottom:1px solid var(--br);flex-shrink:0;font-size:11px;color:var(--tx3)}
+.leg{display:flex;align-items:center;gap:5px}
+.ldot{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Syne',sans-serif}
+.ldot.sp{background:rgba(0,200,150,0.18);border:1.5px solid var(--g);color:var(--g)}
+.ldot.sa{background:rgba(255,107,107,0.18);border:1.5px solid var(--r);color:var(--r)}
+.ldot.sl{background:rgba(255,179,71,0.18);border:1.5px solid var(--am);color:var(--am)}
+.ldot.so{background:rgba(107,107,138,0.2);border:1.5px solid var(--gr);color:var(--gr)}
+
+/* Main table area */
+.att-table-wrap{flex:1;overflow:hidden;display:flex}
+
+/* ===== ATTENDANCE TABLE — single table, sticky left cols ===== */
+.att-page{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.leg-bar{display:flex;align-items:center;gap:14px;padding:6px 16px;background:var(--s1);border-bottom:1px solid var(--br);flex-shrink:0;font-size:11px;color:var(--tx3)}
+.leg{display:flex;align-items:center;gap:5px}
+.ldot{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Syne',sans-serif}
+.ldot.sp{background:rgba(0,200,150,0.18);border:1.5px solid var(--g);color:var(--g)}
+.ldot.sa{background:rgba(255,107,107,0.18);border:1.5px solid var(--r);color:var(--r)}
+.ldot.sl{background:rgba(255,179,71,0.18);border:1.5px solid var(--am);color:var(--am)}
+.ldot.so{background:rgba(107,107,138,0.2);border:1.5px solid var(--gr);color:var(--gr)}
+
+.att-scroll{flex:1;overflow:auto}
+.att-tbl{border-collapse:collapse;table-layout:auto;min-width:100%}
+
+/* Sticky left columns */
+.att-tbl td.lc{position:sticky;background:#13131F;z-index:10}
+.att-tbl th.lc{position:sticky;background:#1C1C2E;z-index:20}
+.att-tbl tbody tr:hover td{background:rgba(123,95,255,0.06)}
+.att-tbl tbody tr:hover td.lc{background:#1e1d32 !important}
+.att-tbl tbody tr:hover td.wktd{background:rgba(123,95,255,0.06)}
+.att-tbl th.lc1,.att-tbl td.lc1{left:0;min-width:155px}
+.att-tbl th.lc2,.att-tbl td.lc2{left:155px;min-width:88px}
+.att-tbl th.lc3,.att-tbl td.lc3{left:243px;width:46px;text-align:center}
+.att-tbl th.lc4,.att-tbl td.lc4{left:289px;width:42px;border-right:2px solid var(--br)}
+.att-tbl th.lc4{box-shadow:6px 0 16px #0A0A12}
+.att-tbl td.lc4{box-shadow:6px 0 16px #0A0A12}
+/* day cells — no stacking */
+.att-tbl td.dc{position:static;z-index:auto}
+.att-tbl th.dc{position:static;z-index:auto}
+.sbox:hover{border-color:rgba(123,95,255,0.7);filter:brightness(1.25);transform:none}
+
+/* Always-visible horizontal scrollbar */
+.att-scroll{flex:1;overflow-x:auto;overflow-y:auto;scrollbar-width:auto;scrollbar-color:var(--br) var(--s2)}
+.att-scroll::-webkit-scrollbar{height:10px;width:6px}
+.att-scroll::-webkit-scrollbar-track{background:var(--s2);border-top:1px solid var(--br)}
+.att-scroll::-webkit-scrollbar-thumb{background:var(--br);border-radius:5px;border:2px solid var(--s2)}
+.att-scroll::-webkit-scrollbar-thumb:hover{background:#4a4a6a}
+
+/* thead */
+.att-tbl thead th{background:var(--s2);padding:6px 10px;font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.4px;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--br);text-align:left}
+.att-tbl thead th.dc{text-align:center;padding:4px 2px;width:44px;min-width:44px}
+.att-tbl thead th.dc .dn{display:block;font-size:8px;opacity:0.6;line-height:1.5;padding-top:3px}
+.att-tbl thead th.dc .dd{display:block;font-size:12px;font-weight:700;font-family:'Syne',sans-serif;line-height:1.5;padding-bottom:3px}
+.att-tbl thead th.wkth{background:rgba(60,20,20,0.5);color:rgba(255,107,107,0.8)}
+.att-tbl thead th.wkth.lc{background:rgba(40,15,15,0.9)}
+
+/* tbody */
+.att-tbl tbody tr{border-bottom:1px solid rgba(42,42,66,0.55)}
+.att-tbl tbody tr:hover td{background:rgba(123,95,255,0.06)!important}
+.att-tbl tbody td{padding:0 10px;vertical-align:middle;height:46px;white-space:nowrap}
+.att-tbl tbody td.dc{padding:0;text-align:center;width:44px;min-width:44px}
+.att-tbl tbody td.wktd{background:rgba(255,40,40,0.03)}
+
+/* STATUS BOX */
+.sbox{width:32px;height:32px;border-radius:7px;border:1.5px solid var(--br);background:var(--s2);color:transparent;font-size:12px;font-weight:700;cursor:pointer;transition:background 0.1s,border-color 0.1s,filter 0.1s;display:inline-flex;align-items:center;justify-content:center;user-select:none;font-family:'Syne',sans-serif}
+.sbox:hover{border-color:rgba(123,95,255,0.6);transform:scale(1.12)}
+.sbox.sp{background:rgba(0,200,150,0.2);border-color:var(--g);color:var(--g)}
+.sbox.sa{background:rgba(255,107,107,0.2);border-color:var(--r);color:var(--r)}
+.sbox.sl{background:rgba(255,179,71,0.2);border-color:var(--am);color:var(--am)}
+.sbox.so{background:rgba(107,107,138,0.22);border-color:var(--gr);color:var(--gr)}
+td.wktd .sbox{border-color:rgba(120,40,40,0.4);background:rgba(30,8,8,0.35)}
+td.wktd .sbox.sp{background:rgba(0,200,150,0.15);border-color:var(--g);color:var(--g)}
+td.wktd .sbox.sa{background:rgba(255,107,107,0.15);border-color:var(--r);color:var(--r)}
+td.wktd .sbox.sl{background:rgba(255,179,71,0.15);border-color:var(--am);color:var(--am)}
+td.wktd .sbox.so{background:rgba(107,107,138,0.15);border-color:var(--gr);color:var(--gr)}
+
+/* Staff info */
+.sname{font-weight:500;color:var(--tx);font-size:12px}
+.scode{font-size:9px;color:var(--tx3);margin-top:1px}
+.wdays{font-weight:700;color:var(--g);font-family:'Syne',sans-serif;font-size:13px}
+.ex-btn{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:500;cursor:pointer;border:1px solid rgba(255,107,107,0.3);background:rgba(255,107,107,0.1);color:var(--r);font-family:'DM Sans',sans-serif}
+.db{display:inline-block;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:500;white-space:nowrap}
+.dm{background:rgba(123,95,255,0.15);color:#A78BFA;border:1px solid rgba(123,95,255,0.25)}
+.ds{background:rgba(0,200,150,0.12);color:var(--g);border:1px solid rgba(0,200,150,0.25)}
+.de{background:rgba(56,161,221,0.12);color:#60AFEF;border:1px solid rgba(56,161,221,0.25)}
+.dg{background:rgba(255,179,71,0.12);color:var(--am);border:1px solid rgba(255,179,71,0.25)}
+.da{background:rgba(255,107,107,0.12);color:var(--r);border:1px solid rgba(255,107,107,0.25)}
+.dh{background:rgba(236,72,153,0.12);color:#F472B6;border:1px solid rgba(236,72,153,0.25)}
+.dp{background:rgba(107,107,138,0.12);color:var(--gr);border:1px solid rgba(107,107,138,0.25)}
+.sal{font-weight:600;color:var(--ac);font-family:'Syne',sans-serif;font-size:11px}
+
+/* REPORT PAGE */
+.rep-wrap{padding:14px;overflow-y:auto;flex:1}
+.month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.mc{background:var(--s1);border:1px solid var(--br);border-radius:6px;padding:10px;cursor:pointer;transition:all 0.15s}
+.mc:hover,.mc.sel{border-color:var(--ac);background:rgba(123,95,255,0.08)}
+.mc-name{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--ac);margin-bottom:5px}
+.mc-stats{display:flex;gap:6px;flex-wrap:wrap;font-size:10px;color:var(--tx3)}
+.detail-card{background:var(--s1);border:1px solid var(--br);border-radius:6px;overflow:hidden}
+.card-hdr{padding:10px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.card-hdr h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+
+/* HISTORY */
+.hist-wrap{padding:14px;overflow-y:auto;flex:1}
+.hsc{background:var(--s1);border:1px solid var(--br);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.hsc-h{padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--br);display:flex;align-items:center;gap:10px}
+.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;font-family:'Syne',sans-serif;flex-shrink:0}
+.hsc-info h4{font-size:12px;font-weight:600;font-family:'Syne',sans-serif}
+.hsc-info p{font-size:10px;color:var(--tx3);margin-top:1px}
+.hsc-b{padding:10px 14px}
+.exit-box{background:rgba(255,107,107,0.07);border:1px solid rgba(255,107,107,0.18);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--tx2);margin-bottom:8px}
+.hist-chips{display:flex;gap:5px;flex-wrap:wrap}
+.hchip{background:var(--s2);border:1px solid var(--br);border-radius:4px;padding:4px 8px;font-size:10px;cursor:pointer;transition:all 0.12s}
+.hchip:hover{border-color:var(--ac);color:var(--ac)}
+
+/* STAFF LIST */
+.sl-wrap{padding:14px;overflow-y:auto;flex:1}
+.tabs{display:flex;gap:3px;background:var(--s2);border-radius:5px;padding:3px;width:fit-content;margin-bottom:12px}
+.tab{padding:5px 14px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:500;color:var(--tx3);transition:all 0.15s}
+.tab.active{background:var(--ac);color:#fff}
+
+/* TABLES generic */
+table.gt{width:100%;border-collapse:collapse;font-size:11px}
+table.gt thead th{padding:7px 10px;text-align:left;font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.5px;background:var(--s2);font-weight:500;white-space:nowrap;border-bottom:1px solid var(--br)}
+table.gt tbody tr{border-bottom:1px solid rgba(42,42,66,0.5);transition:background 0.1s}
+table.gt tbody tr:hover{background:rgba(123,95,255,0.05)}
+table.gt tbody td{padding:7px 10px;vertical-align:middle}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(3px);z-index:200;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.md{background:var(--s1);border:1px solid var(--br);border-radius:12px;padding:20px;width:360px;max-height:92vh;overflow-y:auto}
+.md h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:14px}
+.fr{margin-bottom:10px}
+.fr label{display:block;font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px}
+.fr input,.fr select,.fr textarea{width:100%;background:var(--s2);border:1px solid var(--br);color:var(--tx);padding:7px 9px;border-radius:5px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.fr input:focus,.fr select:focus{border-color:var(--ac)}
+.fr textarea{resize:vertical;min-height:55px}
+.ol{font-size:9px;color:var(--tx3);margin-left:3px}
+.mbtns{display:flex;gap:7px;margin-top:14px}
+.mbtns .btn{flex:1;justify-content:center;padding:8px}
+
+/* Status */
+.sx{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:20px;font-size:9px;font-weight:500}
+.s-act{background:rgba(0,200,150,0.12);color:var(--g);border:1px solid rgba(0,200,150,0.25)}
+.s-ex{background:rgba(255,107,107,0.12);color:var(--r);border:1px solid rgba(255,107,107,0.25)}
+.dot{width:4px;height:4px;border-radius:50%}
+
+/* Export dropdown */
+.exp-wrap{position:relative;display:inline-block}
+.exp-menu{display:none;position:absolute;right:0;top:calc(100% + 3px);background:var(--s1);border:1px solid var(--br);border-radius:6px;min-width:155px;z-index:50}
+.exp-menu.open{display:block}
+.exp-item{padding:8px 12px;font-size:11px;cursor:pointer;color:var(--tx2);transition:background 0.12s;white-space:nowrap}
+.exp-item:hover{background:var(--s2);color:var(--tx)}
+
+/* Custom desig input */
+.desig-row{display:flex;gap:6px;align-items:center}
+.desig-row select{flex:1}
+.desig-custom-wrap{display:none;margin-top:5px}
+
+/* TOAST */
+.toast{position:fixed;bottom:14px;right:14px;background:var(--s1);border:1px solid var(--br);border-radius:5px;padding:8px 14px;font-size:11px;z-index:300;transform:translateY(50px);opacity:0;transition:all 0.25s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(0,200,150,0.4);color:var(--g)}
+.toast.error{border-color:rgba(255,107,107,0.4);color:var(--r)}
+.no-data{text-align:center;padding:30px;color:var(--tx3);font-size:12px}
+</style>
+</head>
+<body>
+
+<aside class="sb">
+  <div class="logo"><h2>AttendPro</h2><p>Staff Management System</p></div>
+  <nav class="nav">
+    <div class="ni active" onclick="showPage('att')" id="ni-att"><span class="ni-ic">📋</span>Attendance</div>
+    <div class="ni" onclick="showPage('rep')" id="ni-rep"><span class="ni-ic">📊</span>Monthly Report</div>
+    <div class="ni" onclick="showPage('hist')" id="ni-hist"><span class="ni-ic">🗂️</span>Ex-Staff History</div>
+    <div class="ni" onclick="showPage('sl')" id="ni-sl"><span class="ni-ic">👥</span>Staff List</div>
+  </nav>
+  <div class="sb-foot">
+    <div class="pb"><label>Current Period</label><strong id="sb-period">—</strong></div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="pt" id="topbar-title">Attendance <span>Register</span></div>
+    <div id="att-ctrl" style="display:flex;align-items:center;gap:7px">
+      <div class="scb">Staff <strong id="sc">0</strong></div>
+      <select id="att-m"></select>
+      <select id="att-y"></select>
+      <button class="btn bp" onclick="openAddStaff()">+ Add Staff</button>
+    </div>
+    <div id="rep-ctrl" style="display:none;align-items:center;gap:7px">
+      <select id="rep-y"></select>
+      <div class="exp-wrap">
+        <button class="btn bg" onclick="toggleExp('rep-exp')">⬇ Export ▾</button>
+        <div class="exp-menu" id="rep-exp">
+          <div class="exp-item" onclick="expMEx()">📗 Month — Excel</div>
+          <div class="exp-item" onclick="expYEx()">📘 Year — Excel</div>
+          <div class="exp-item" onclick="expMPDF()">📄 Month — PDF</div>
+          <div class="exp-item" onclick="expYPDF()">🗒️ Year — PDF</div>
+        </div>
+      </div>
+    </div>
+    <div id="hist-ctrl" style="display:none;align-items:center;gap:7px">
+      <input type="text" id="hist-q" placeholder="Search ex-staff…" oninput="renderHist()" style="width:170px">
+    </div>
+    <div id="sl-ctrl" style="display:none;align-items:center;gap:7px">
+      <button class="btn bp" onclick="openAddStaff()">+ Add Staff</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ATTENDANCE -->
+    <div class="page active" id="page-att">
+      <div class="att-page">
+        <div class="leg-bar">
+          <div class="leg"><div class="ldot sp">P</div><span>Present</span></div>
+          <div class="leg"><div class="ldot sa">A</div><span>Absent</span></div>
+          <div class="leg"><div class="ldot sl">L</div><span>Leave</span></div>
+          <div class="leg"><div class="ldot so">O</div><span>Off</span></div>
+          <span style="color:var(--tx3);margin-left:8px;font-size:10px">• Click = mark • Phir click = next • Again = clear</span>
+        </div>
+        <div class="att-scroll" id="att-scroll">
+          <table class="att-tbl" id="att-tbl"><thead id="att-thead"></thead><tbody id="att-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="page" id="page-rep">
+      <div class="rep-wrap">
+        <div class="month-grid" id="month-grid"></div>
+        <div id="month-detail"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-hist">
+      <div class="hist-wrap" id="hist-content"></div>
+    </div>
+
+    <!-- STAFF LIST -->
+    <div class="page" id="page-sl">
+      <div class="sl-wrap">
+        <div class="tabs">
+          <div class="tab active" id="tab-act" onclick="slTab('act')">Active Staff</div>
+          <div class="tab" id="tab-ex" onclick="slTab('ex')">Ex-Staff</div>
+        </div>
+        <div id="sl-content"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div class="mo" id="m-staff">
+  <div class="md">
+    <h3 id="ms-title">New Staff Add</h3>
+    <div class="fr"><label>Full Name *</label><input id="f-name" placeholder="Rahul Sharma"></div>
+    <div class="fr"><label>Staff Code *</label><input id="f-code" placeholder="EMP001"></div>
+    <div class="fr">
+      <label>Designation</label>
+      <div class="desig-row">
+        <select id="f-desig" onchange="onDesigChange()">
+          <option>Manager</option><option>Supervisor</option><option>Executive</option>
+          <option>Engineer</option><option>Accountant</option><option>HR</option>
+          <option>Peon</option><option>Guard</option><option>-- Custom --</option>
+        </select>
+      </div>
+      <div class="desig-custom-wrap" id="desig-custom-wrap">
+        <input id="f-desig-custom" placeholder="Type custom designation…" style="margin-top:4px">
+      </div>
+      <div id="saved-desigs" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+    </div>
+    <div class="fr"><label>Monthly Salary (₹) <span class="ol">— optional</span></label><input id="f-sal" type="number" placeholder="Leave blank if not needed"></div>
+    <div class="fr"><label>Joining Date</label><input id="f-join" type="date"></div>
+    <div class="mbtns">
+      <button class="btn bo" onclick="closeM('m-staff')">Cancel</button>
+      <button class="btn bp" id="ms-btn" onclick="saveStaff()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXIT MODAL -->
+<div class="mo" id="m-exit">
+  <div class="md">
+    <h3>Staff Exit</h3>
+    <div id="exit-info" style="background:var(--s2);border:1px solid var(--br);border-radius:5px;padding:9px 11px;font-size:11px;color:var(--tx2);margin-bottom:12px"></div>
+    <div class="fr"><label>Leaving Date</label><input id="ex-date" type="date"></div>
+    <div class="fr"><label>Reason</label>
+      <select id="ex-reason"><option>Resignation</option><option>Termination</option><option>Retirement</option><option>Contract End</option><option>Absconding</option><option>Other</option></select>
+    </div>
+    <div class="fr"><label>Remarks <span class="ol">— optional</span></label><textarea id="ex-rem" placeholder="Additional notes…"></textarea></div>
+    <div class="mbtns">
+      <button class="btn bo" onclick="closeM('m-exit')">Cancel</button>
+      <button class="btn bd" onclick="doExit()">Mark Exit</button>
+    </div>
+  </div>
+</div>
+
+<!-- HIST DETAIL MODAL -->
+<div class="mo" id="m-hd">
+  <div class="md" style="width:430px">
+    <h3 id="hd-title">History Detail</h3>
+    <div id="hd-body"></div>
+    <div class="mbtns" style="margin-top:10px"><button class="btn bo" onclick="closeM('m-hd')">Close</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WD=['Su','Mo','Tu','We','Th','Fr','Sa'];
+const DCLS={Manager:'dm',Supervisor:'ds',Executive:'de',Engineer:'dg',Accountant:'da',HR:'dh',Peon:'dp',Guard:'dp'};
+const AVC=['#7B5FFF','#00C896','#FF6B6B','#FFB347','#60AFEF','#F472B6','#A78BFA'];
+const STATUS=['P','A','L','O'];
+const STCLS=['tp','ta','tl','to'];
+
+let staff=[],exStaff=[],att={};
+let customDesigs=[];
+let cM=new Date().getMonth(),cY=new Date().getFullYear();
+let editId=null,exitId=null,slCT='act',repSelM=null;
+
+/* ---- STORAGE ---- */
+function ld(){
+  try{staff=JSON.parse(localStorage.ap3_staff||'[]')}catch(e){staff=[]}
+  try{exStaff=JSON.parse(localStorage.ap3_ex||'[]')}catch(e){exStaff=[]}
+  try{att=JSON.parse(localStorage.ap3_att||'{}')}catch(e){att={}}
+  try{customDesigs=JSON.parse(localStorage.ap3_cd||'[]')}catch(e){customDesigs=[]}
+  if(!staff.length){
+    staff=[
+      {id:'s1',name:'Rahul Sharma',code:'EMP001',desig:'Manager',salary:45000,join:'2023-01-10'},
+      {id:'s2',name:'Priya Verma',code:'EMP002',desig:'Executive',salary:28000,join:'2023-03-01'},
+      {id:'s3',name:'Amit Singh',code:'EMP003',desig:'Supervisor',salary:32000,join:'2022-06-15'},
+    ];sv();
+  }
+}
+function sv(){
+  localStorage.ap3_staff=JSON.stringify(staff);
+  localStorage.ap3_ex=JSON.stringify(exStaff);
+  localStorage.ap3_att=JSON.stringify(att);
+  localStorage.ap3_cd=JSON.stringify(customDesigs);
+}
+
+/* ---- HELPERS ---- */
+function gd(m,y){return new Date(y,m+1,0).getDate()}
+function isWk(y,m,d){const w=new Date(y,m,d).getDay();return w===0||w===6}
+function ak(sid,y,m,d){return sid+'_'+y+'_'+m+'_'+d}
+function gat(sid,y,m,d){return att[ak(sid,y,m,d)]||''}
+function sat(sid,y,m,d,s){const k=ak(sid,y,m,d);if(att[k]===s)delete att[k];else att[k]=s;sv();}
+function ini(n){return n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}
+function avc(id){return AVC[id.charCodeAt(id.length-1)%AVC.length]}
+function cnt(sid,y,m){
+  const days=gd(m,y);let P=0,A=0,L=0,O=0;
+  for(let d=1;d<=days;d++){const s=gat(sid,y,m,d);if(s==='P')P++;else if(s==='A')A++;else if(s==='L')L++;else if(s==='O')O++;}
+  return{P,A,L,O};
+}
+function calcSal(s,y,m){
+  if(!s.salary)return null;
+  const{P,L,O}=cnt(s.id,y,m);
+  return Math.round((s.salary/gd(m,y))*(P+L+O));
+}
+function dcls(d){return DCLS[d]||'dp'}
+
+/* ---- INIT SELECTS ---- */
+function initSel(){
+  const am=document.getElementById('att-m'),ay=document.getElementById('att-y'),ry=document.getElementById('rep-y');
+  MN.forEach((n,i)=>am.innerHTML+=`<option value="${i}"${i===cM?' selected':''}>${n}</option>`);
+  for(let y=2023;y<=2028;y++){
+    ay.innerHTML+=`<option value="${y}"${y===cY?' selected':''}>${y}</option>`;
+    ry.innerHTML+=`<option value="${y}"${y===cY?' selected':''}>${y}</option>`;
+  }
+  am.onchange=()=>{cM=+am.value;renderAtt()};
+  ay.onchange=()=>{cY=+ay.value;renderAtt()};
+  ry.onchange=()=>{repSelM=null;renderRep()};
+}
+
+const CYCLE=['','P','A','L','O'];
+const SBOX_CLS={'':'',P:'sp',A:'sa',L:'sl',O:'so'};
+
+function renderAtt(){
+  document.getElementById('sb-period').textContent=MS[cM]+' '+cY;
+  document.getElementById('sc').textContent=staff.length;
+  const D=gd(cM,cY);
+  // THEAD
+  let th=`<tr>
+    <th class="lc lc1">Staff</th>
+    <th class="lc lc2">Designation</th>
+    <th class="lc lc3" style="text-align:center">Days</th>
+    <th class="lc lc4"></th>`;
+  for(let d=1;d<=D;d++){
+    const wk=isWk(cY,cM,d);
+    const dn=WD[new Date(cY,cM,d).getDay()];
+    th+=`<th class="dc${wk?' wkth':''}"><span class="dn">${dn}</span><span class="dd">${d}</span></th>`;
+  }
+  th+='</tr>';
+  // TBODY
+  let tb='';
+  if(!staff.length){
+    tb=`<tr><td class="lc lc1"><div class="no-data">📋 Add Staff karein</div></td><td class="lc lc2"></td><td class="lc lc3"></td><td class="lc lc4"></td>${Array(D).fill('<td></td>').join('')}</tr>`;
+  } else {
+    staff.forEach(s=>{
+      const{P,A,L,O}=cnt(s.id,cY,cM);
+      tb+=`<tr>
+        <td class="lc lc1"><div class="sname">${s.name}</div><div class="scode">${s.code}</div></td>
+        <td class="lc lc2"><span class="db ${dcls(s.desig)}">${s.desig}</span></td>
+        <td class="lc lc3"><span class="wdays">${P+L+O}</span></td>
+        <td class="lc lc4"><button class="ex-btn" onclick="openExit('${s.id}')">Exit</button></td>`;
+      for(let d=1;d<=D;d++){
+        const st=gat(s.id,cY,cM,d),wkd=isWk(cY,cM,d),sc=SBOX_CLS[st]||'';
+        tb+=`<td class="dc${wkd?' wktd':''}"><button class="sbox${sc?' '+sc:''}" onclick="cycleTick('${s.id}',${d})">${st}</button></td>`;
+      }
+      tb+='</tr>';
+    });
+  }
+  document.getElementById('att-thead').innerHTML=th;
+  document.getElementById('att-tbody').innerHTML=tb;
+}
+
+function cycleTick(sid,d){
+  const cur=gat(sid,cY,cM,d),idx=CYCLE.indexOf(cur),next=CYCLE[(idx+1)%CYCLE.length];
+  if(next===''){delete att[`${sid}_${cY}_${cM}_${d}`];sv();}
+  else sat(sid,cY,cM,d,next);
+  renderAtt();
+}
+
+/* ---- REPORT ---- */
+function renderRep(){
+  const y=+document.getElementById('rep-y').value;
+  const all=[...staff,...exStaff];
+  let html='';
+  for(let m=0;m<12;m++){
+    let P=0,A=0,sal=0,sc=0,hasSal=false;
+    all.forEach(s=>{const c=cnt(s.id,y,m);if(c.P+c.A+c.L+c.O>0){P+=c.P;A+=c.A;const sv=calcSal(s,y,m);if(sv){sal+=sv;hasSal=true;}sc++;}});
+    html+=`<div class="mc${repSelM===m?' sel':''}" onclick="selMonth(${m},${y})">
+      <div class="mc-name">${MS[m]} ${y}</div>
+      <div class="mc-stats">
+        <span>Staff <strong style="color:var(--tx)">${sc}</strong></span>
+        <span>P:<strong style="color:var(--g)">${P}</strong></span>
+        <span>A:<strong style="color:var(--r)">${A}</strong></span>
+        ${hasSal?`<span>₹<strong style="color:var(--ac)">${sal.toLocaleString('en-IN')}</strong></span>`:''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('month-grid').innerHTML=html;
+  if(repSelM!==null)renderMonthDetail(repSelM,y);
+  else document.getElementById('month-detail').innerHTML='';
+}
+function selMonth(m,y){repSelM=m;renderRep();}
+function renderMonthDetail(m,y){
+  const all=[...staff,...exStaff];
+  let rows='';let tP=0,tA=0,tL=0,tSal=0,hasSal=false;
+  all.forEach(s=>{
+    const{P,A,L,O}=cnt(s.id,y,m);if(P+A+L+O===0)return;
+    const wk=P+L+O;const sal=calcSal(s,y,m);
+    tP+=P;tA+=A;tL+=L;if(sal){tSal+=sal;hasSal=true;}
+    const isEx=exStaff.find(e=>e.id===s.id);
+    rows+=`<tr>
+      <td><span class="sname">${s.name}</span>${isEx?` <span class="sx s-ex" style="font-size:8px;margin-left:4px">Ex</span>`:''}</td>
+      <td><span class="db ${dcls(s.desig)}">${s.desig}</span></td>
+      <td style="text-align:center;color:var(--g);font-weight:600">${P}</td>
+      <td style="text-align:center;color:var(--r);font-weight:600">${A}</td>
+      <td style="text-align:center;color:var(--am);font-weight:600">${L}</td>
+      <td style="text-align:center;color:var(--gr);font-weight:600">${O}</td>
+      <td style="text-align:center" class="wdays">${wk}</td>
+      <td class="sal">${sal!==null?'₹'+sal.toLocaleString('en-IN'):'—'}</td>
+    </tr>`;
+  });
+  document.getElementById('month-detail').innerHTML=`<div class="detail-card">
+    <div class="card-hdr"><h4>${MN[m]} ${y}</h4>
+      <span style="font-size:10px;color:var(--tx3)">P:${tP} A:${tA} L:${tL}${hasSal?' | ₹'+tSal.toLocaleString('en-IN'):''}</span>
+    </div>
+    <div style="overflow-x:auto"><table class="gt">
+      <thead><tr><th>Staff</th><th>Designation</th><th>P</th><th>A</th><th>L</th><th>O</th><th>Work Days</th><th>Salary</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8"><div class="no-data">Koi data nahi</div></td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+/* ---- HISTORY ---- */
+function renderHist(){
+  const q=(document.getElementById('hist-q').value||'').toLowerCase();
+  const list=exStaff.filter(s=>s.name.toLowerCase().includes(q)||s.code.toLowerCase().includes(q));
+  if(!list.length){document.getElementById('hist-content').innerHTML='<div class="no-data">🗂️ Koi ex-staff nahi</div>';return;}
+  document.getElementById('hist-content').innerHTML=list.map(s=>{
+    const col=avc(s.id);
+    const months=[];
+    for(let y=2023;y<=2028;y++)for(let m=0;m<12;m++){const c=cnt(s.id,y,m);if(c.P+c.A+c.L+c.O>0)months.push({y,m,...c});}
+    const chips=months.map(x=>`<div class="hchip" onclick="showHD('${s.id}',${x.y},${x.m})"><div style="font-weight:500">${MS[x.m]} ${x.y}</div><div style="font-size:9px;color:var(--tx3)">P:${x.P} A:${x.A}</div></div>`).join('');
+    return`<div class="hsc"><div class="hsc-h">
+      <div class="av" style="background:${col}22;color:${col}">${ini(s.name)}</div>
+      <div class="hsc-info"><h4>${s.name} <span class="sx s-ex" style="margin-left:4px"><span class="dot" style="background:var(--r)"></span>Ex</span></h4>
+      <p>${s.code} • ${s.desig}${s.salary?' • ₹'+s.salary.toLocaleString('en-IN')+'/mo':''}${s.join?' • '+s.join:''}</p></div>
+    </div><div class="hsc-b">
+      <div class="exit-box">🚪 Exit: <strong>${s.exitDate||'—'}</strong> | Reason: <strong>${s.exitReason||'—'}</strong>${s.exitRem?' | '+s.exitRem:''}</div>
+      ${months.length?`<div style="font-size:10px;color:var(--tx3);margin-bottom:6px">Month click karo detail ke liye:</div><div class="hist-chips">${chips}</div>`:'<div style="font-size:10px;color:var(--tx3)">Koi attendance data nahi</div>'}
+    </div></div>`;
+  }).join('');
+}
+function showHD(sid,y,m){
+  const s=exStaff.find(e=>e.id===sid);if(!s)return;
+  const{P,A,L,O}=cnt(sid,y,m);const sal=calcSal(s,y,m);
+  let rows='';
+  for(let d=1;d<=gd(m,y);d++){
+    const st=gat(sid,y,m,d);
+    const col=st==='P'?'var(--g)':st==='A'?'var(--r)':st==='L'?'var(--am)':st==='O'?'var(--gr)':'var(--tx3)';
+    rows+=`<tr><td style="color:var(--tx3)">${d} ${WD[new Date(y,m,d).getDay()]}</td><td style="color:${col};font-weight:600">${st||'—'}</td></tr>`;
+  }
+  document.getElementById('hd-title').textContent=s.name+' — '+MN[m]+' '+y;
+  document.getElementById('hd-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+      ${[['P',P,'var(--g)'],['A',A,'var(--r)'],['L',L,'var(--am)'],['Salary',sal!==null?'₹'+sal.toLocaleString('en-IN'):'—','var(--ac)']].map(([l,v,c])=>`<div style="background:var(--s2);border:1px solid var(--br);border-radius:5px;padding:7px;text-align:center"><div style="font-size:9px;color:var(--tx3)">${l}</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:${c}">${v}</div></div>`).join('')}
+    </div>
+    <div style="max-height:220px;overflow-y:auto"><table class="gt"><thead><tr><th>Day</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.getElementById('m-hd').classList.add('open');
+}
+
+/* ---- STAFF LIST ---- */
+function slTab(t){slCT=t;document.getElementById('tab-act').classList.toggle('active',t==='act');document.getElementById('tab-ex').classList.toggle('active',t==='ex');renderSL();}
+function renderSL(){
+  const list=slCT==='act'?staff:exStaff;
+  if(!list.length){document.getElementById('sl-content').innerHTML='<div class="no-data">Koi staff nahi</div>';return;}
+  const isEx=slCT==='ex';
+  document.getElementById('sl-content').innerHTML=`<div class="detail-card" style="overflow-x:auto"><table class="gt">
+    <thead><tr><th>Name</th><th>Code</th><th>Designation</th><th>Salary</th><th>Join</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${list.map(s=>{
+      const col=avc(s.id);
+      return`<tr>
+        <td><div style="display:flex;align-items:center;gap:7px">
+          <div class="av" style="background:${col}22;color:${col};width:26px;height:26px;font-size:10px">${ini(s.name)}</div>
+          <span class="sname">${s.name}</span>
+        </div></td>
+        <td class="scode">${s.code}</td>
+        <td><span class="db ${dcls(s.desig)}">${s.desig}</span></td>
+        <td class="sal">${s.salary?'₹'+s.salary.toLocaleString('en-IN'):'—'}</td>
+        <td style="font-size:10px;color:var(--tx3)">${s.join||'—'}</td>
+        <td>${!isEx?`<span class="sx s-act"><span class="dot" style="background:var(--g)"></span>Active</span>`:`<span class="sx s-ex"><span class="dot" style="background:var(--r)"></span>Ex-Staff</span>`}</td>
+        <td>${!isEx?`<button class="btn bo" style="padding:2px 8px;font-size:10px;margin-right:4px" onclick="openEditStaff('${s.id}')">Edit</button><button class="btn bd" style="padding:2px 8px;font-size:10px" onclick="openExit('${s.id}')">Exit</button>`:`<button class="btn bo" style="padding:2px 8px;font-size:10px;color:var(--r)" onclick="delEx('${s.id}')">Delete</button>`}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ---- CUSTOM DESIGNATION ---- */
+function onDesigChange(){
+  const v=document.getElementById('f-desig').value;
+  const wrap=document.getElementById('desig-custom-wrap');
+  wrap.style.display=v==='-- Custom --'?'block':'none';
+  if(v!=='-- Custom --')document.getElementById('f-desig-custom').value='';
+}
+function getDesig(){
+  const v=document.getElementById('f-desig').value;
+  if(v==='-- Custom --'){
+    const cv=document.getElementById('f-desig-custom').value.trim();
+    if(cv&&!customDesigs.includes(cv)){customDesigs.push(cv);sv();rebuildDesigSelect();}
+    return cv||'Other';
+  }
+  return v;
+}
+function rebuildDesigSelect(selVal){
+  const base=['Manager','Supervisor','Executive','Engineer','Accountant','HR','Peon','Guard'];
+  const sel=document.getElementById('f-desig');
+  const current=selVal||sel.value;
+  sel.innerHTML=[...base,...customDesigs].map(d=>`<option${d===current?' selected':''}>${d}</option>`).join('')+`<option value="-- Custom --"${current==='-- Custom --'?' selected':''}>-- Custom --</option>`;
+  onDesigChange();
+}
+function showSavedDesigs(){
+  const wrap=document.getElementById('saved-desigs');
+  if(!customDesigs.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<span style="font-size:9px;color:var(--tx3);align-self:center">Saved:</span>`+customDesigs.map(d=>`<span style="background:var(--s3);border:1px solid var(--br);border-radius:3px;padding:2px 6px;font-size:10px;cursor:pointer;color:var(--tx2)" onclick="pickDesig('${d}')">${d}</span>`).join('');
+}
+function pickDesig(d){
+  const sel=document.getElementById('f-desig');
+  // check if it's in list
+  const opt=[...sel.options].find(o=>o.value===d);
+  if(opt){sel.value=d;onDesigChange();}
+}
+
+/* ---- MODALS ---- */
+function openAddStaff(){
+  editId=null;
+  document.getElementById('ms-title').textContent='New Staff Add';
+  document.getElementById('ms-btn').textContent='Save';
+  document.getElementById('f-name').value='';
+  document.getElementById('f-code').value='';
+  document.getElementById('f-sal').value='';
+  document.getElementById('f-join').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-desig-custom').value='';
+  rebuildDesigSelect('Manager');
+  showSavedDesigs();
+  document.getElementById('m-staff').classList.add('open');
+}
+function openEditStaff(id){
+  editId=id;const s=staff.find(x=>x.id===id);if(!s)return;
+  document.getElementById('ms-title').textContent='Edit Staff';
+  document.getElementById('ms-btn').textContent='Update';
+  document.getElementById('f-name').value=s.name;
+  document.getElementById('f-code').value=s.code;
+  document.getElementById('f-sal').value=s.salary||'';
+  document.getElementById('f-join').value=s.join||'';
+  rebuildDesigSelect(s.desig);
+  showSavedDesigs();
+  document.getElementById('m-staff').classList.add('open');
+}
+function saveStaff(){
+  const name=document.getElementById('f-name').value.trim();
+  const code=document.getElementById('f-code').value.trim();
+  if(!name||!code){toast('Name aur Code zaroori hai!','error');return;}
+  const desig=getDesig();
+  const obj={name,code,desig,salary:parseFloat(document.getElementById('f-sal').value)||null,join:document.getElementById('f-join').value};
+  if(editId){const s=staff.find(x=>x.id===editId);if(s)Object.assign(s,obj);toast('Updated!','success');}
+  else{staff.push({id:'s'+Date.now(),...obj});toast('Staff add ho gaya!','success');}
+  sv();closeM('m-staff');renderAtt();renderSL();
+}
+function openExit(id){
+  exitId=id;const s=staff.find(x=>x.id===id);if(!s)return;
+  document.getElementById('exit-info').innerHTML=`<strong>${s.name}</strong> (${s.code}) — ${s.desig}`;
+  document.getElementById('ex-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('ex-rem').value='';
+  document.getElementById('m-exit').classList.add('open');
+}
+function doExit(){
+  const s=staff.find(x=>x.id===exitId);if(!s)return;
+  exStaff.push({...s,exitDate:document.getElementById('ex-date').value,exitReason:document.getElementById('ex-reason').value,exitRem:document.getElementById('ex-rem').value.trim(),exitTs:Date.now()});
+  staff=staff.filter(x=>x.id!==exitId);sv();closeM('m-exit');
+  toast(s.name+' exit ho gaye','success');renderAtt();renderSL();renderHist();
+}
+function delEx(id){if(!confirm('Permanently delete?'))return;exStaff=exStaff.filter(x=>x.id!==id);sv();renderSL();toast('Deleted','success');}
+function closeM(id){document.getElementById(id).classList.remove('open')}
+
+/* ---- PAGES ---- */
+function showPage(p){
+  ['att','rep','hist','sl'].forEach(x=>{
+    document.getElementById('page-'+x).classList.toggle('active',x===p);
+    document.getElementById('ni-'+x).classList.toggle('active',x===p);
+    document.getElementById(x+'-ctrl').style.display=x===p?'flex':'none';
+  });
+  const T={att:'Attendance <span>Register</span>',rep:'Monthly <span>Reports</span>',hist:'Ex-Staff <span>History</span>',sl:'Staff <span>List</span>'};
+  document.getElementById('topbar-title').innerHTML=T[p];
+  if(p==='rep')renderRep();
+  if(p==='hist')renderHist();
+  if(p==='sl')renderSL();
+}
+
+/* ---- EXPORT ---- */
+function toggleExp(id){
+  const m=document.getElementById(id);m.classList.toggle('open');
+  setTimeout(()=>document.addEventListener('click',function h(e){if(!e.target.closest('.exp-wrap')){m.classList.remove('open');document.removeEventListener('click',h);}},{once:true}),10);
+}
+function repYear(){return +document.getElementById('rep-y').value}
+function buildMD(m,y){
+  const all=[...staff,...exStaff];const rows=[];
+  all.forEach(s=>{const{P,A,L,O}=cnt(s.id,y,m);if(P+A+L+O===0)return;const sal=calcSal(s,y,m);rows.push({Name:s.name,Code:s.code,Designation:s.desig,Present:P,Absent:A,Leave:L,Off:O,'Work Days':P+L+O,'Salary':sal!==null?sal:'N/A'});});
+  return rows;
+}
+function buildYD(y){
+  const all=[...staff,...exStaff];const rows=[];
+  for(let m=0;m<12;m++)all.forEach(s=>{const{P,A,L,O}=cnt(s.id,y,m);if(P+A+L+O===0)return;const sal=calcSal(s,y,m);rows.push({Month:MN[m],Name:s.name,Code:s.code,Designation:s.desig,Present:P,Absent:A,Leave:L,Off:O,'Work Days':P+L+O,'Salary':sal!==null?sal:'N/A'});});
+  return rows;
+}
+function expMEx(){const y=repYear();const m=repSelM!==null?repSelM:cM;const d=buildMD(m,y);if(!d.length){toast('Koi data nahi','error');return;}const ws=XLSX.utils.json_to_sheet(d);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,MN[m]);XLSX.writeFile(wb,'Att_'+MN[m]+'_'+y+'.xlsx');toast('Excel ready!','success');}
+function expYEx(){const y=repYear();const d=buildYD(y);if(!d.length){toast('Koi data nahi','error');return;}const ws=XLSX.utils.json_to_sheet(d);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Year '+y);XLSX.writeFile(wb,'Att_Year_'+y+'.xlsx');toast('Yearly Excel ready!','success');}
+function pdfHtml(title,hdr,rows){return`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:11px;margin:18px}h2{color:#534AB7;margin-bottom:3px}p{color:#888;font-size:10px;margin-bottom:12px}table{width:100%;border-collapse:collapse}th{background:#534AB7;color:#fff;padding:6px 8px;text-align:left;font-size:10px}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}tr:nth-child(even){background:#f5f5ff}.f{margin-top:12px;font-size:9px;color:#aaa;text-align:right}</style></head><body><h2>${title}</h2><p>Generated: ${new Date().toLocaleDateString('en-IN')}</p><table><thead><tr>${hdr.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${Object.values(r).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table><div class="f">AttendPro</div></body></html>`;}
+function expMPDF(){const y=repYear();const m=repSelM!==null?repSelM:cM;const d=buildMD(m,y);if(!d.length){toast('Koi data nahi','error');return;}const w=window.open('','_blank');w.document.write(pdfHtml(MN[m]+' '+y+' Report',Object.keys(d[0]),d));w.document.close();w.onload=()=>w.print();toast('PDF print dialog!','success');}
+function expYPDF(){const y=repYear();const d=buildYD(y);if(!d.length){toast('Koi data nahi','error');return;}const w=window.open('','_blank');w.document.write(pdfHtml('Year '+y+' Report',Object.keys(d[0]),d));w.document.close();w.onload=()=>w.print();toast('PDF print dialog!','success');}
+
+/* ---- TOAST ---- */
+function toast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+/* ---- INIT ---- */
+document.querySelectorAll('.mo').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
+ld();initSel();renderAtt();
+</script>
+</body>
+</html>
